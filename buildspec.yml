@@ -1,0 +1,30 @@
+version: 0.2
+
+phases:
+  install:
+    #If you use the Ubuntu standard image 2.0 or later, you must specify runtime-versions.
+    #If you specify runtime-versions and use an image other than Ubuntu standard image 2.0, the build fails.
+    #runtime-versions:
+    # name: version
+    commands:
+      - echo "Installing Packer"
+      - curl -o packer.zip https://releases.hashicorp.com/packer/1.8.3/packer_1.8.3_linux_amd64.zip
+      - unzip packer.zip
+  pre_build:
+    commands:
+      - echo "Validating base-image-aws.pkr.hcl"
+      - ./packer init base-image-aws.pkr.hcl
+      - ./packer validate base-image-aws.pkr.hcl
+  build:
+    commands:
+       - echo "Build phase"
+       - ./packer build base-image-aws.pkr.hcl | tee build_$(date +%Y-%m-%d).log
+  post_build:
+    commands:
+      - ./scripts/ami_extractor.sh
+      - echo "HashiCorp Packer build completed on `date`"
+artifacts:
+  files:
+    - ami_builder_event.json
+    - build_$(date +%Y-%m-%d).log
+  discard-paths: yes
